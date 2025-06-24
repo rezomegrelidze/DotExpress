@@ -1,15 +1,28 @@
 ﻿using System.Text;
 
-var server = new DotExpress.Server.HttpServer("http://localhost:5000/");
+var app = new DotExpress.Server.HttpServer("http://localhost:5000/");
 
-server.On("GET", "/hello", async ctx =>
-{
-    var response = "<html><body>Hello, Express-style!</body></html>";
-    var buffer = Encoding.UTF8.GetBytes(response);
-    ctx.Response.ContentType = "text/html";
-    ctx.Response.ContentLength64 = buffer.Length;
-    await ctx.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
-    ctx.Response.OutputStream.Close();
+var todos = new List<dynamic>();
+var id = 1;
+
+app.UseJson(); // hypothetical middleware to parse JSON bodies
+
+app.Get("/todos", (req, res) => {
+    res.json(todos);
 });
 
-server.Start();
+app.Post("/todos", (req, res) => {
+    var todo = new { id = id++, text = req.body.text };
+    todos.Add(todo);
+    res.json(todo);
+});
+
+app.Delete("/todos/:id", (req, res) => {
+    var todoId = int.Parse(req.parameters.id);
+    todos.RemoveAll(t => t.id == todoId);
+    res.sendStatus(204);
+});
+
+app.Start();
+
+Console.ReadLine();
